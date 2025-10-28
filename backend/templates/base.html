@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ניהול אנשי קשר וקבוצות{% endblock %}</title>
+    
+    <!-- Google Fonts - Enhanced Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=JetBrains+Mono:wght@100;200;300;400;500;600;700;800&family=Poppins:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap RTL -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <!-- Font Awesome 6.5.0 -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <!-- Lucide Icons (Modern Alternative) -->
+    <link href="https://unpkg.com/lucide@latest/dist/umd/lucide.css" rel="stylesheet">
+    
+    <!-- Design System CSS -->
+    <link href="{{ url_for('static', filename='design-system.css') }}" rel="stylesheet">
+    
+    <style>
+        /* Enhanced design system integration */
+        body {
+            font-family: var(--font-family-primary);
+            background: linear-gradient(135deg, hsl(var(--background)) 0%, hsl(var(--muted)) 100%);
+            color: hsl(var(--foreground));
+            font-size: var(--text-base);
+            line-height: var(--leading-relaxed);
+            font-weight: var(--font-normal);
+            transition: background-color var(--transition-normal), color var(--transition-normal);
+        }
+        
+        /* Enhanced typography for Hebrew */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-family-display);
+            font-weight: var(--font-bold);
+            line-height: var(--leading-tight);
+            letter-spacing: var(--tracking-tight);
+        }
+        
+        /* Enhanced navigation */
+        .navbar-modern {
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            background: linear-gradient(135deg, hsl(var(--card) / 0.9), hsl(var(--muted) / 0.3));
+            border-bottom: 1px solid hsl(var(--border));
+            box-shadow: var(--shadow-lg);
+            transition: all var(--transition-normal);
+        }
+        
+        .navbar-modern .nav-link {
+            color: hsl(var(--foreground));
+            font-weight: var(--font-medium);
+            padding: var(--spacing-2) var(--spacing-4);
+            border-radius: var(--radius);
+            transition: all var(--transition-fast);
+        }
+        
+        .navbar-modern .nav-link:hover {
+            background: linear-gradient(135deg, hsl(var(--muted) / 0.5), hsl(var(--muted) / 0.2));
+            color: hsl(var(--primary));
+            transform: translateY(-1px);
+        }
+        
+        .navbar-brand-modern {
+            font-family: var(--font-family-display);
+            font-weight: var(--font-extrabold);
+            font-size: 1.75rem;
+            letter-spacing: var(--tracking-tight);
+        }
+        
+        .navbar-brand {
+            font-weight: var(--font-extrabold);
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--secondary)));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .btn-calendar-yes {
+            background: linear-gradient(135deg, hsl(var(--success)), hsl(var(--success) / 0.8));
+            border: none;
+            color: hsl(var(--success-foreground));
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2) var(--spacing-4);
+            font-weight: var(--font-semibold);
+            transition: all var(--transition-fast);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .btn-calendar-yes:hover {
+            background: linear-gradient(135deg, hsl(var(--success) / 0.9), hsl(var(--success) / 0.7));
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+            color: hsl(var(--success-foreground));
+        }
+        
+        .btn-calendar-no {
+            background: linear-gradient(135deg, hsl(var(--destructive)), hsl(var(--destructive) / 0.8));
+            border: none;
+            color: hsl(var(--destructive-foreground));
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2) var(--spacing-4);
+            font-weight: var(--font-semibold);
+            transition: all var(--transition-fast);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .btn-calendar-no:hover {
+            background: linear-gradient(135deg, hsl(var(--destructive) / 0.9), hsl(var(--destructive) / 0.7));
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+            color: hsl(var(--destructive-foreground));
+        }
+        
+        .search-form, .form-modern {
+            background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--muted) / 0.1));
+            padding: var(--spacing-8);
+            border-radius: var(--radius-xl);
+            margin-bottom: var(--spacing-8);
+            box-shadow: var(--shadow-lg);
+            border: 1px solid hsl(var(--border));
+            transition: all var(--transition-normal);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        
+        .form-control-modern {
+            background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--muted) / 0.1));
+            border: 2px solid hsl(var(--input));
+            border-radius: var(--radius-lg);
+            color: hsl(var(--foreground));
+            padding: var(--spacing-3) var(--spacing-4);
+            font-weight: var(--font-medium);
+            transition: all var(--transition-fast);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        
+        .form-control-modern:focus {
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 3px hsl(var(--ring) / 0.2);
+            background: linear-gradient(135deg, hsl(var(--card)), hsl(var(--muted) / 0.2));
+            transform: translateY(-1px);
+        }
+        
+        .form-control-modern::placeholder {
+            color: hsl(var(--muted-foreground));
+        }
+        
+        .results-table {
+            background: hsl(var(--card));
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid hsl(var(--border));
+            transition: all var(--transition-normal);
+        }
+        
+        /* Table styling for dark mode */
+        .table, .table-modern {
+            background: hsl(var(--card)) !important;
+            color: hsl(var(--card-foreground)) !important;
+        }
+        
+        .table thead th, .table-modern thead th {
+            background: hsl(var(--muted)) !important;
+            color: hsl(var(--foreground)) !important;
+            border-bottom: 1px solid hsl(var(--border)) !important;
+            font-weight: var(--font-semibold);
+        }
+        
+        .table tbody tr, .table-modern tbody tr {
+            background: hsl(var(--card)) !important;
+            color: hsl(var(--card-foreground)) !important;
+            border-bottom: 1px solid hsl(var(--border) / 0.5) !important;
+        }
+        
+        .table tbody tr:hover, .table-modern tbody tr:hover {
+            background: hsl(var(--muted) / 0.3) !important;
+        }
+        
+        .table tbody tr:nth-child(even), .table-modern tbody tr:nth-child(even) {
+            background: hsl(var(--muted) / 0.1) !important;
+        }
+        
+        .table tbody tr:nth-child(even):hover, .table-modern tbody tr:nth-child(even):hover {
+            background: hsl(var(--muted) / 0.4) !important;
+        }
+        
+        .table tbody td, .table-modern tbody td {
+            background: inherit !important;
+            color: inherit !important;
+            border-color: hsl(var(--border) / 0.3) !important;
+        }
+        
+        .israeli-flag {
+            color: hsl(var(--primary));
+        }
+        
+        .business-icon {
+            color: hsl(var(--warning));
+        }
+        
+        .group-icon {
+            color: hsl(var(--muted-foreground));
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .pagination-container {
+            margin-top: 2rem;
+            text-align: center;
+        }
+        
+        /* אנימציות נוספות */
+        .fade-in {
+            animation: fadeIn 0.6s ease-out;
+        }
+        
+        .slide-up {
+            animation: slideInUp 0.5s ease-out;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Theme Switcher -->
+    <div class="theme-switcher" id="themeSwitcher">
+        <button class="theme-switcher-toggle" id="themeToggle" aria-label="החלף ערכת נושא" aria-expanded="false">
+            <i class="fas fa-moon" id="themeIcon"></i>
+            <span id="themeLabel">Dark</span>
+            <i class="fas fa-chevron-down"></i>
+        </button>
+        <div class="theme-switcher-dropdown" id="themeDropdown">
+            <button class="theme-switcher-option" data-theme="dark">
+                <i class="fas fa-moon"></i>
+                <span>Dark</span>
+            </button>
+            <button class="theme-switcher-option" data-theme="light">
+                <i class="fas fa-sun"></i>
+                <span>Light</span>
+            </button>
+            <button class="theme-switcher-option" data-theme="system">
+                <i class="fas fa-desktop"></i>
+                <span>System</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-modern">
+        <div class="container">
+            <a class="navbar-brand navbar-brand-modern" href="/">
+                <i class="fas fa-calendar-plus me-2 icon-gradient icon-lg"></i>
+                TimeBro Manager
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home me-1 icon-sm"></i>דף הבית
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/contacts">
+                            <i class="fas fa-users me-1 icon-sm"></i>אנשי קשר
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/groups">
+                            <i class="fas fa-users-cog me-1 icon-sm"></i>קבוצות
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mt-4">
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+        // פונקציות כלליות
+        function showLoading() {
+            $('.loading').show();
+        }
+        
+        function hideLoading() {
+            $('.loading').hide();
+        }
+        
+        function showAlert(message, type = 'success') {
+            const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+            const alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('.container').prepend(alertHtml);
+            
+            // הסרה אוטומטית אחרי 5 שניות
+            setTimeout(() => {
+                $('.alert').fadeOut();
+            }, 5000);
+        }
+        
+        // עדכון סטטיסטיקות
+        function updateStats() {
+            $.get('/api/stats', function(data) {
+                $('#total-contacts').text(data.total_contacts?.toLocaleString() || '0');
+                $('#contacts-in-calendar').text(data.contacts_in_calendar?.toLocaleString() || '0');
+                $('#israeli-contacts').text(data.israeli_contacts?.toLocaleString() || '0');
+                $('#total-groups').text(data.total_groups?.toLocaleString() || '0');
+                $('#groups-in-calendar').text(data.groups_in_calendar?.toLocaleString() || '0');
+            });
+        }
+        
+        $(document).ready(function() {
+            updateStats();
+        });
+
+        // Theme Management System
+        class ThemeManager {
+            constructor() {
+                this.themeToggle = document.getElementById('themeToggle');
+                this.themeDropdown = document.getElementById('themeDropdown');
+                this.themeIcon = document.getElementById('themeIcon');
+                this.themeLabel = document.getElementById('themeLabel');
+                this.themeOptions = document.querySelectorAll('.theme-switcher-option');
+                
+                this.init();
+            }
+            
+            init() {
+                // Load saved theme or default to system
+                const savedTheme = localStorage.getItem('selectedTheme') || 'system';
+                this.setTheme(savedTheme);
+                this.updateUI(savedTheme);
+                
+                // Add event listeners
+                this.themeToggle.addEventListener('click', () => this.toggleDropdown());
+                this.themeOptions.forEach(option => {
+                    option.addEventListener('click', () => this.selectTheme(option.dataset.theme));
+                });
+                
+                // Close dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.theme-switcher')) {
+                        this.closeDropdown();
+                    }
+                });
+                
+                // Listen for system theme changes
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+                    if (this.getCurrentTheme() === 'system') {
+                        this.applySystemTheme();
+                    }
+                });
+            }
+            
+            toggleDropdown() {
+                const isOpen = this.themeDropdown.classList.contains('show');
+                if (isOpen) {
+                    this.closeDropdown();
+                } else {
+                    this.openDropdown();
+                }
+            }
+            
+            openDropdown() {
+                this.themeDropdown.classList.add('show');
+                this.themeToggle.setAttribute('aria-expanded', 'true');
+            }
+            
+            closeDropdown() {
+                this.themeDropdown.classList.remove('show');
+                this.themeToggle.setAttribute('aria-expanded', 'false');
+            }
+            
+            selectTheme(theme) {
+                this.setTheme(theme);
+                this.updateUI(theme);
+                this.closeDropdown();
+                
+                // Animation
+                this.themeToggle.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.themeToggle.style.transform = 'scale(1)';
+                }, 150);
+            }
+            
+            setTheme(theme) {
+                if (theme === 'system') {
+                    document.documentElement.removeAttribute('data-theme');
+                    this.applySystemTheme();
+                } else {
+                    document.documentElement.setAttribute('data-theme', theme);
+                }
+                localStorage.setItem('selectedTheme', theme);
+            }
+            
+            applySystemTheme() {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            }
+            
+            getCurrentTheme() {
+                return localStorage.getItem('selectedTheme') || 'system';
+            }
+            
+            updateUI(theme) {
+                // Update active option
+                this.themeOptions.forEach(option => {
+                    option.classList.remove('active');
+                    if (option.dataset.theme === theme) {
+                        option.classList.add('active');
+                    }
+                });
+                
+                // Update toggle button
+                const actualTheme = theme === 'system' ? 
+                    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : 
+                    theme;
+                
+                this.updateThemeIcon(actualTheme);
+                this.themeLabel.textContent = this.getThemeLabel(theme);
+            }
+            
+            updateThemeIcon(theme) {
+                const icons = {
+                    dark: 'fas fa-moon',
+                    light: 'fas fa-sun',
+                    system: 'fas fa-desktop'
+                };
+                this.themeIcon.className = icons[theme] || icons.dark;
+            }
+            
+            getThemeLabel(theme) {
+                const labels = {
+                    dark: 'Dark',
+                    light: 'Light',
+                    system: 'System'
+                };
+                return labels[theme] || 'System';
+            }
+        }
+        
+        // Initialize theme manager when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            new ThemeManager();
+        });
+
+        // אנימציות כניסה
+        function animateOnScroll() {
+            const elements = document.querySelectorAll('.animate-fade-in-up, .animate-slide-in-right, .animate-slide-in-left');
+            elements.forEach(element => {
+                const rect = element.getBoundingClientRect();
+                const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
+                
+                if (isVisible && !element.classList.contains('animated')) {
+                    element.classList.add('animated');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', animateOnScroll);
+        window.addEventListener('load', animateOnScroll);
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+
+
+
+

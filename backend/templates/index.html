@@ -1,0 +1,805 @@
+{% extends "base.html" %}
+
+{% block title %}דף הבית - TimeBro Manager{% endblock %}
+
+{% block content %}
+<style>
+    /* Enhanced button states for sync */
+    #sync-all-btn {
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    #sync-all-btn.disabled,
+    #sync-all-btn:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        background: linear-gradient(135deg, #6c757d, #5a6268) !important;
+        border-color: #5a6268 !important;
+    }
+
+    #sync-all-btn:not(:disabled):hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    }
+
+    /* Progress bar enhancements */
+    #sync-progress-bar {
+        transition: width 0.3s ease;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    /* Sync status alert animations */
+    #sync-all-status .alert {
+        animation: slideInDown 0.4s ease-out;
+    }
+
+    @keyframes slideInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Success state */
+    .alert-success {
+        background: linear-gradient(135deg, #d4edda, #c3e6cb);
+        border-color: #28a745;
+        color: #155724;
+    }
+
+    /* Error state */
+    .alert-danger {
+        background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+        border-color: #dc3545;
+        color: #721c24;
+    }
+
+    /* RTL datetime inputs - Force proper RTL display */
+    .datetime-rtl {
+        direction: ltr !important;
+        text-align: left !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Keep the calendar icon on the right for RTL */
+    input[type="datetime-local"].datetime-rtl::-webkit-calendar-picker-indicator {
+        margin-left: auto;
+        margin-right: 8px;
+        order: -1;
+    }
+
+    /* Right-align datetime labels */
+    .datetime-label-rtl {
+        text-align: right !important;
+        direction: rtl !important;
+    }
+</style>
+
+<div class="container-fluid py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <!-- Header Section -->
+            <div class="text-center mb-5 animate-fade-in">
+                <h1 class="text-gradient">
+                    <i class="fas fa-calendar-plus me-3"></i>
+                    TimeBro Manager
+                </h1>
+                <p class="text-muted text-lg">נהל את אנשי הקשר והקבוצות שלך לצורך הכנסה ליומן TimeBro</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <a href="/contacts" class="text-decoration-none">
+                <div class="card card-glass h-100 animate-slide-in-right" style="animation-delay: 0.1s;">
+                    <div class="card-header">
+                        <div class="flex justify-between items-center">
+                            <h3 class="mb-0">
+                                <i class="fas fa-users me-2 text-primary"></i>אנשי קשר
+                            </h3>
+                            <i class="fas fa-arrow-left fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 border-end border-primary">
+                                <h2 id="total-contacts" class="text-primary mb-2">{{ stats.total_contacts|default(0) }}</h2>
+                                <p class="text-muted mb-0">סה"כ אנשי קשר</p>
+                            </div>
+                            <div class="col-6">
+                                <h2 id="contacts-in-calendar" class="text-success mb-2">{{ stats.contacts_in_calendar|default(0) }}</h2>
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-calendar-check me-1"></i>מסומנים ליומן
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-6">
+            <a href="/groups" class="text-decoration-none">
+                <div class="card card-glass h-100 animate-slide-in-right" style="animation-delay: 0.2s;">
+                    <div class="card-header">
+                        <div class="flex justify-between items-center">
+                            <h3 class="mb-0">
+                                <i class="fas fa-users-cog me-2 text-success"></i>קבוצות
+                            </h3>
+                            <i class="fas fa-arrow-left fa-2x text-success"></i>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 border-end border-success">
+                                <h2 id="total-groups" class="text-success mb-2">{{ stats.total_groups|default(0) }}</h2>
+                                <p class="text-muted mb-0">סה"כ קבוצות</p>
+                            </div>
+                            <div class="col-6">
+                                <h2 id="groups-in-calendar" class="text-primary mb-2">{{ stats.groups_in_calendar|default(0) }}</h2>
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-calendar-check me-1"></i>מסומנות ליומן
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+
+
+<!-- סטטיסטיקות סינכרון -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card card-glass">
+            <div class="card-header">
+                <h3>
+                    <i class="fas fa-chart-line me-2 text-info"></i>סטטיסטיקות סינכרון
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h2 id="total-calendar-events" class="text-primary mb-2">{{ stats.total_calendar_events|default(0) }}</h2>
+                        <p class="text-muted mb-0">סה״כ אירועים ביומן</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h2 id="recent-calendar-events" class="text-success mb-2">{{ stats.recent_calendar_events|default(0) }}</h2>
+                        <p class="text-muted mb-0">אירועים מ-30 יום אחרונים</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h2 id="august-2025-events" class="text-warning mb-2">{{ stats.august_2025_events|default(0) }}</h2>
+                        <p class="text-muted mb-0">אירועים מאוגוסט 2025</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h2 id="last-sync-messages" class="text-info mb-2">{{ stats.last_sync_messages|default(0) }}</h2>
+                        <p class="text-muted mb-0">הודעות בסינכרון אחרון</p>
+                    </div>
+                </div>
+                {% if stats.last_sync_date %}
+                <div class="row mt-3">
+                    <div class="col-12 text-center">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            סינכרון אחרון: {{ stats.last_sync_date }}
+                            {% if stats.last_sync_events > 0 %}
+                            | נוצרו {{ stats.last_sync_events }} אירועים
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- מידע על Rate Limiting -->
+                <div class="row mt-2">
+                    <div class="col-12 text-center">
+                        <small class="text-info">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            <strong>Rate Limiting מופעל:</strong> 1.2 שניות בין בקשות | 2 שניות בין סינכרונים
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- כפתור סינכרון כללי -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3>
+                    <i class="fas fa-sync me-2 text-warning"></i>סינכרון כללי
+                </h3>
+                <p class="text-muted">סנכרן את כל האנשים והקבוצות המסומנים ליומן</p>
+                
+                <!-- Last Sync Info -->
+                {% if stats.last_sync_date %}
+                <div class="alert alert-info mb-3">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <i class="fas fa-clock me-2"></i>
+                            <strong>סינכרון אחרון:</strong>
+                            <span id="last-sync-display">{{ stats.last_sync_date }}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fas fa-comments me-2"></i>
+                            <strong>שיחות:</strong>
+                            <span class="badge bg-primary">{{ stats.last_sync_messages|default(0) }}</span>
+                        </div>
+                        <div class="col-md-4">
+                            <i class="fas fa-calendar-check me-2"></i>
+                            <strong>אירועים נוצרו:</strong>
+                            <span class="badge bg-success">{{ stats.last_sync_events|default(0) }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- בחירת תאריכים מהירה -->
+                <div class="row mb-3 mt-3">
+                    <div class="col-md-8">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <label class="form-label datetime-label-rtl"><strong>תאריך ושעת התחלה:</strong></label>
+                                <input type="datetime-local" class="form-control form-control-lg datetime-rtl" id="sync-start-date-all"
+                                       step="60" required
+                                       data-last-sync="{{ stats.last_sync_date|default('') }}"
+                                       data-last-sync-end="{{ stats.last_sync_end_date|default('') }}"
+                                       placeholder="בחר תאריך ושעת התחלה"
+                                       title="בחר תאריך ושעת התחלה">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label datetime-label-rtl"><strong>תאריך ושעת סיום:</strong></label>
+                                <input type="datetime-local" class="form-control form-control-lg datetime-rtl" id="sync-end-date-all"
+                                       step="60" required
+                                       placeholder="בחר תאריך ושעת סיום"
+                                       title="בחר תאריך ושעת סיום">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label datetime-label-rtl"><strong>בחירה מהירה:</strong></label>
+                        <select class="form-select form-select-lg" id="quick-date-select">
+                            <option value="custom">בחר ידנית</option>
+                            <option value="last_sync">מהפעם האחרונה ועד היום</option>
+                            <option value="last_month">חודש אחרון</option>
+                            <option value="last_2months">חודשיים אחרונים</option>
+                            <option value="last_3months">שלושה חודשים אחרונים</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="alert alert-info mb-3" id="last-sync-info" style="display: block;">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>סינכרון אחרון:</strong> <span id="last-sync-date">לא סונכרן עדיין</span>
+                </div>
+                
+                <button class="btn btn-primary btn-lg" id="sync-all-btn">
+                    <i class="fas fa-sync me-2" id="sync-icon"></i>
+                    <span id="sync-text">סנכרן הכל עכשיו</span>
+                </button>
+                <div id="sync-all-status" class="mt-3" style="display: none;">
+                    <div class="alert alert-primary" role="alert">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-sync fa-spin me-2"></i>
+                            <strong id="sync-all-text">מתחיל סינכרון...</strong>
+                        </div>
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated"
+                                 role="progressbar"
+                                 id="sync-progress-bar"
+                                 style="width: 0%"
+                                 aria-valuenow="0"
+                                 aria-valuemin="0"
+                                 aria-valuemax="100">
+                                <span id="sync-progress-text">0%</span>
+                            </div>
+                        </div>
+                        <div id="sync-details" class="mt-2 small text-muted">
+                            <div id="sync-stats"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- מידע על המערכת -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card card-glass">
+            <div class="card-header">
+                <h4><i class="fas fa-info-circle me-2 text-primary"></i>מידע על המערכת</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-database me-2"></i>מקורות נתונים</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Green API - אנשי קשר</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Evolution API - קבוצות</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-search me-2"></i>אפשרויות חיפוש</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-user me-2"></i>חיפוש לפי שם</li>
+                            <li><i class="fas fa-phone me-2"></i>חיפוש לפי מספר טלפון</li>
+                            <li><i class="fas fa-calendar me-2"></i>סינון לפי תאריכים</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-filter me-2"></i>פילטרים זמינים</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-flag me-2"></i>ישראליים בלבד</li>
+                            <li><i class="fas fa-building me-2"></i>עסקים בלבד</li>
+                            <li><i class="fas fa-calendar-check me-2"></i>מסומנים ליומן</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+// פונקציות למניפולציה של תאריכים
+// Format datetime for display (DD/MM/YYYY HH:mm)
+function formatDateTimeForDisplay(dateTimeStr) {
+    if (!dateTimeStr) return '';
+    const date = new Date(dateTimeStr);
+    if (isNaN(date.getTime())) return dateTimeStr;
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${day}/${month}/${year} ${hours}:${minutes}`;
+}
+
+// Format datetime for input type="datetime-local" (YYYY-MM-DDTHH:mm)
+function formatDateTimeForInput(dateTimeStr) {
+    if (!dateTimeStr) return '';
+    const date = new Date(dateTimeStr);
+    if (isNaN(date.getTime())) return '';
+
+    // Convert to Israel timezone
+    const israelDate = new Date(date.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
+
+    const year = israelDate.getFullYear();
+    const month = String(israelDate.getMonth() + 1).padStart(2, '0');
+    const day = String(israelDate.getDate()).padStart(2, '0');
+    const hours = String(israelDate.getHours()).padStart(2, '0');
+    const minutes = String(israelDate.getMinutes()).padStart(2, '0');
+
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+// Get current datetime in Israel timezone
+function getNowIsraelTime() {
+    const now = new Date();
+    const israelDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
+    return formatDateTimeForInput(israelDate);
+}
+
+function setQuickDates(option) {
+    const now = getNowIsraelTime(); // Current time in Israel
+    let startDateTime, endDateTime;
+
+    // Get last sync END datetime from localStorage (not start!)
+    const lastSyncEndStr = localStorage.getItem('lastSyncEndDate');
+
+    if (option === 'last_sync' && lastSyncEndStr && lastSyncEndStr.trim()) {
+        // From last sync END to now (continue from where we left off)
+        startDateTime = lastSyncEndStr; // Already in correct format
+        endDateTime = now;
+        console.log('⚡ Quick date: Using last sync END from localStorage:', startDateTime);
+    } else if (option === 'last_month') {
+        // From first day of last month 00:00 to now
+        const today = new Date();
+        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        lastMonth.setHours(0, 0, 0, 0);
+        startDateTime = formatDateTimeForInput(lastMonth);
+        endDateTime = now;
+    } else if (option === 'last_2months') {
+        // From 2 months ago to now
+        const today = new Date();
+        const twoMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 2, 1);
+        twoMonthsAgo.setHours(0, 0, 0, 0);
+        startDateTime = formatDateTimeForInput(twoMonthsAgo);
+        endDateTime = now;
+    } else if (option === 'last_3months') {
+        // From 3 months ago to now
+        const today = new Date();
+        const threeMonthsAgo = new Date(today.getFullYear(), today.getMonth() - 3, 1);
+        threeMonthsAgo.setHours(0, 0, 0, 0);
+        startDateTime = formatDateTimeForInput(threeMonthsAgo);
+        endDateTime = now;
+    } else {
+        return; // Custom manual selection
+    }
+
+    $('#sync-start-date-all').val(startDateTime);
+    $('#sync-end-date-all').val(endDateTime);
+    console.log('⚡ Quick date set:', option, startDateTime, 'to', endDateTime);
+}
+
+
+$(document).ready(function() {
+    // אירוע בחירה מהירה
+    $(document).on('change', '#quick-date-select', function() {
+        const option = $(this).val();
+        setQuickDates(option);
+        console.log('Selected option:', option);
+        console.log('Setting dates...');
+    });
+    
+    // הצגת תאריך סינכרון אחרון
+    const lastSync = localStorage.getItem('lastSyncDate');
+    if (lastSync) {
+        const syncDate = new Date(lastSync);
+        $('#last-sync-date').text(formatDateTimeForDisplay(lastSync));
+        $('#last-sync-info').show();
+    }
+
+    // Set default datetime range based on last sync END or fallback to last month
+    if (!$('#sync-start-date-all').val() || !$('#sync-end-date-all').val()) {
+        const endDateTime = getNowIsraelTime(); // Current time in Israel
+        let startDateTime;
+
+        // Try to get last sync END datetime from localStorage (client-side storage)
+        const lastSyncEndStr = localStorage.getItem('lastSyncEndDate');
+
+        if (lastSyncEndStr && lastSyncEndStr.trim()) {
+            // Use last sync END as start datetime (continue from where we left off)
+            console.log('📅 Using last sync END from localStorage as start date:', lastSyncEndStr);
+            startDateTime = lastSyncEndStr; // Already in correct format
+
+            // Get last sync timestamp for display
+            const lastSyncDate = localStorage.getItem('lastSyncDate');
+            if (lastSyncDate) {
+                const lastSyncDisplay = formatDateTimeForDisplay(lastSyncDate);
+                $('#last-sync-display').text(lastSyncDisplay);
+            }
+        } else {
+            // Fallback: try from server data attribute
+            const serverLastSyncEndStr = $('#sync-start-date-all').data('last-sync-end');
+
+            if (serverLastSyncEndStr && serverLastSyncEndStr.trim()) {
+                console.log('📅 Using server last sync END as start date:', serverLastSyncEndStr);
+                startDateTime = formatDateTimeForInput(serverLastSyncEndStr);
+            } else {
+                // No last sync anywhere - default to first day of last month at 00:00
+                const today = new Date();
+                const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+                lastMonth.setHours(0, 0, 0, 0);
+                startDateTime = formatDateTimeForInput(lastMonth);
+                console.log('📅 No last sync found - using last month:', startDateTime);
+            }
+        }
+
+        $('#sync-start-date-all').val(startDateTime);
+        $('#sync-end-date-all').val(endDateTime);
+        console.log('✅ Set default datetimes:', startDateTime, 'to', endDateTime);
+    }
+
+    updateStats();
+    
+    // פונקציונליות סינכרון כללי
+    let currentSyncId = null;
+    let syncCheckInterval = null;
+    
+    // שמירת טווח תאריכים ב-localStorage
+    function saveDateRange(startDate, endDate) {
+        localStorage.setItem('lastSyncRange', JSON.stringify({
+            startDate: startDate,
+            endDate: endDate
+        }));
+    }
+    
+    // טעינת טווח תאריכים שמור
+    function loadDateRange() {
+        const saved = localStorage.getItem('lastSyncRange');
+        if (saved) {
+            try {
+                const range = JSON.parse(saved);
+                return {
+                    startDate: range.startDate,
+                    endDate: range.endDate
+                };
+            } catch (e) {
+                console.log('שגיאה בטעינת טווח שמור:', e);
+            }
+        }
+        
+        // ברירת מחדל: 1 לחודש הקודם עד היום
+        const today = new Date();
+        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        return {
+            startDate: lastMonth.toISOString().split('T')[0],
+            endDate: today.toISOString().split('T')[0]
+        };
+    }
+    
+    // לחיצה על כפתור סינכרון כללי
+    $('#sync-all-btn').on('click', function(e) {
+        console.log('🔘 Sync button clicked!');
+        e.preventDefault(); // Prevent any default action
+
+        const startDate = $('#sync-start-date-all').val();
+        const endDate = $('#sync-end-date-all').val();
+
+        console.log('📅 Start date:', startDate);
+        console.log('📅 End date:', endDate);
+
+        if (!startDate || !endDate) {
+            console.error('❌ Missing dates!');
+            alert('נא לבחור תאריכי התחלה וסיום');
+            return;
+        }
+
+        console.log('✅ Dates are valid, showing confirmation...');
+        if (confirm(`האם אתה רוצה לסנכרן את כל המסומנים ליומן?\nתקופה: ${startDate} - ${endDate}`)) {
+            console.log('✅ User confirmed, starting sync...');
+            startSyncAll(startDate, endDate);
+        } else {
+            console.log('❌ User cancelled');
+        }
+    });
+    
+    // התחלת סינכרון כללי
+    function startSyncAll(startDate, endDate) {
+        console.log('🚀 startSyncAll called with:', startDate, endDate);
+
+        // Update button appearance
+        console.log('🎨 Updating button appearance...');
+        $('#sync-all-btn').prop('disabled', true).addClass('disabled');
+        $('#sync-icon').removeClass('fa-sync').addClass('fa-spinner fa-spin');
+        $('#sync-text').text('מסנכרן...');
+
+        // Show status area with animation
+        console.log('📊 Showing status area...');
+        $('#sync-all-status').slideDown(400);
+        $('#sync-all-text').text('מתחיל סינכרון כללי...');
+        $('#sync-progress-bar').css('width', '5%').attr('aria-valuenow', 5);
+        $('#sync-progress-text').text('5%');
+        $('#sync-stats').html('<i class="fas fa-hourglass-start me-1"></i>מכין לסינכרון...');
+
+        console.log('📡 Sending AJAX request to /api/sync/all...');
+
+        // Convert datetime-local format (YYYY-MM-DDTHH:mm) to date format (YYYY-MM-DD)
+        const startDateOnly = startDate.split('T')[0];
+        const endDateOnly = endDate.split('T')[0];
+        console.log('📅 Converted dates:', startDateOnly, endDateOnly);
+
+        $.ajax({
+            url: '/api/sync/all',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                start_date: startDateOnly,
+                end_date: endDateOnly
+            }),
+            success: function(response) {
+                console.log('✅ AJAX success! Response:', response);
+                if (response.success) {
+                    currentSyncId = response.sync_id;
+                    console.log('✅ Got sync_id:', currentSyncId);
+                    $('#sync-all-text').text('סינכרון מתבצע...');
+                    $('#sync-progress-bar').css('width', '10%').attr('aria-valuenow', 10);
+                    $('#sync-progress-text').text('10%');
+                    $('#sync-stats').html('<i class="fas fa-sync fa-spin me-1"></i>מסנכרן נתונים...');
+                    startProgressCheck();
+                } else {
+                    console.error('❌ Sync failed:', response.error);
+                    showAlert('שגיאה בהתחלת סינכרון: ' + response.error, 'error');
+                    resetSyncButton();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ AJAX error:', status, error);
+                console.error('Response:', xhr.responseText);
+                showAlert('שגיאה בתקשורת עם השרת: ' + error, 'error');
+                resetSyncButton();
+            }
+        });
+    }
+    
+    // בדיקת התקדמות סינכרון
+    function startProgressCheck() {
+        if (syncCheckInterval) {
+            clearInterval(syncCheckInterval);
+        }
+
+        let progressPercent = 10;
+
+        syncCheckInterval = setInterval(function() {
+            if (!currentSyncId) return;
+
+            // Increment progress gradually for visual feedback
+            if (progressPercent < 90) {
+                progressPercent += 2;
+                $('#sync-progress-bar').css('width', progressPercent + '%').attr('aria-valuenow', progressPercent);
+                $('#sync-progress-text').text(progressPercent + '%');
+            }
+
+            $.get(`/api/sync/status/${currentSyncId}`)
+                .done(function(status) {
+                    if (status.status === 'completed') {
+                        clearInterval(syncCheckInterval);
+                        // Set to 100% before showing completion
+                        $('#sync-progress-bar').css('width', '100%').attr('aria-valuenow', 100);
+                        $('#sync-progress-text').text('100%');
+                        handleSyncComplete(status.result);
+                    } else if (status.status === 'error') {
+                        clearInterval(syncCheckInterval);
+                        handleSyncError(status.error);
+                    } else if (status.status === 'running') {
+                        updateProgress(status);
+                    }
+                })
+                .fail(function(xhr, status, error) {
+                    clearInterval(syncCheckInterval);
+                    handleSyncError('שגיאה בבדיקת סטטוס: ' + error);
+                });
+        }, 2000); // בדיקה כל 2 שניות
+    }
+
+    // עדכון התקדמות
+    function updateProgress(status) {
+        $('#sync-all-text').text('מסנכרן הודעות...');
+
+        // Show any additional details from status
+        if (status.current_item) {
+            $('#sync-stats').html(`
+                <div><i class="fas fa-hourglass-half me-1"></i>פריט נוכחי: ${status.current_item}</div>
+            `);
+        } else {
+            $('#sync-stats').html(`
+                <div><i class="fas fa-sync fa-spin me-1"></i>מעבד נתונים...</div>
+            `);
+        }
+    }
+    
+    // השלמת סינכרון
+    function handleSyncComplete(result) {
+        if (result.success) {
+            // Update progress bar to success state
+            $('#sync-progress-bar')
+                .removeClass('progress-bar-striped progress-bar-animated')
+                .addClass('bg-success')
+                .css('width', '100%');
+
+            $('#sync-all-text').html('<i class="fas fa-check-circle me-2 text-success"></i>סינכרון הושלם בהצלחה!');
+
+            const statsHtml = `
+                <div class="row mt-2 text-center">
+                    <div class="col-md-3">
+                        <strong>${result.total_contacts || 0}</strong><br>
+                        <small>אנשי קשר</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>${result.total_groups || 0}</strong><br>
+                        <small>קבוצות</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>${result.total_messages || 0}</strong><br>
+                        <small>הודעות</small>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>${result.total_events || 0}</strong><br>
+                        <small>אירועים</small>
+                    </div>
+                </div>
+            `;
+            $('#sync-stats').html(statsHtml);
+
+            // Show success alert
+            const message = `
+                <strong>🎉 סינכרון כללי הושלם בהצלחה!</strong><br>
+                <div class="mt-2">
+                    👥 אנשי קשר: ${result.total_contacts || 0} |
+                    👥 קבוצות: ${result.total_groups || 0} |
+                    📱 הודעות: ${result.total_messages || 0} |
+                    📅 אירועים: ${result.total_events || 0}
+                </div>
+            `;
+            showAlert(message, 'success');
+
+            // Save sync timestamp and date range to localStorage
+            const endDate = $('#sync-end-date-all').val();
+            localStorage.setItem('lastSyncDate', new Date().toISOString());
+            localStorage.setItem('lastSyncEndDate', endDate); // Save the end date as the new start point
+
+            console.log('💾 Saved last sync end date for next sync:', endDate);
+
+            // עדכון סטטיסטיקות
+            updateStats();
+
+            // Auto-hide status after 5 seconds
+            setTimeout(function() {
+                $('#sync-all-status').slideUp(400, function() {
+                    resetSyncButton();
+                });
+            }, 5000);
+        } else {
+            handleSyncError(result.error || 'שגיאה לא ידועה');
+        }
+
+        currentSyncId = null;
+    }
+
+    // שגיאה בסינכרון
+    function handleSyncError(error) {
+        // Update progress bar to error state
+        $('#sync-progress-bar')
+            .removeClass('progress-bar-striped progress-bar-animated')
+            .addClass('bg-danger');
+
+        $('#sync-all-text').html('<i class="fas fa-exclamation-circle me-2 text-danger"></i>סינכרון נכשל');
+
+        $('#sync-stats').html(`
+            <div class="alert alert-danger mt-2 mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>שגיאה:</strong> ${error}
+            </div>
+        `);
+
+        showAlert('שגיאה בסינכרון כללי: ' + error, 'error');
+
+        // Auto-hide after 10 seconds for errors
+        setTimeout(function() {
+            $('#sync-all-status').slideUp(400, function() {
+                resetSyncButton();
+            });
+        }, 10000);
+
+        currentSyncId = null;
+    }
+
+    // איפוס כפתור סינכרון
+    function resetSyncButton() {
+        $('#sync-all-btn')
+            .prop('disabled', false)
+            .removeClass('disabled');
+
+        $('#sync-icon')
+            .removeClass('fa-spinner fa-spin')
+            .addClass('fa-sync');
+
+        $('#sync-text').text('סנכרן הכל עכשיו');
+
+        // Reset progress bar
+        $('#sync-progress-bar')
+            .removeClass('bg-success bg-danger')
+            .addClass('progress-bar-striped progress-bar-animated')
+            .css('width', '0%')
+            .attr('aria-valuenow', 0);
+
+        $('#sync-progress-text').text('0%');
+        $('#sync-stats').html('');
+    }
+});
+</script>
+{% endblock %}
+
+
+

@@ -1,0 +1,1166 @@
+{% extends "base.html" %}
+
+{% block title %}ניהול אנשי קשר{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4 animate-fade-in-up">
+        <div class="col-12">
+            <h1 class="heading-1">
+                <i class="fas fa-users me-3 text-primary"></i>
+                ניהול אנשי קשר
+            </h1>
+            <p class="lead" style="color: hsl(var(--muted-foreground)); font-weight: var(--font-medium);">חפש וסנן את אנשי הקשר שלך, ובחר מי יכנס ליומן TimeBro</p>
+        </div>
+    </div>
+
+<!-- טופס חיפוש -->
+<div class="form-modern mb-4 animate-slide-in-right" style="animation-delay: 0.1s;">
+    <form id="search-form">
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <label for="search-term" class="form-label">
+                    <i class="fas fa-search me-1"></i>חיפוש לפי שם
+                </label>
+                <input type="text" class="form-control form-control-modern" id="search-term" placeholder="הזן שם לחיפוש...">
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <label for="phone-filter" class="form-label">
+                    <i class="fas fa-phone me-1"></i>מספר טלפון
+                </label>
+                <input type="text" class="form-control form-control-modern" id="phone-filter" placeholder="הזן מספר או חלק ממספר...">
+            </div>
+            
+            <div class="col-md-4 mb-3">
+                <label class="form-label">
+                    <i class="fas fa-filter me-1"></i>פילטרים
+                </label>
+                <div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="israeli-only">
+                        <label class="form-check-label" for="israeli-only">
+                            <i class="fas fa-flag israeli-flag me-1"></i>ישראליים בלבד
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="business-only">
+                        <label class="form-check-label" for="business-only">
+                            <i class="fas fa-building business-icon me-1"></i>עסקים בלבד
+                        </label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="personal-only" checked>
+                        <label class="form-check-label" for="personal-only">
+                            <i class="fas fa-user-check text-primary me-1"></i>אנשי קשר אישיים בלבד
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <label for="date-from" class="form-label">
+                    <i class="fas fa-calendar me-1"></i>מתאריך
+                </label>
+                <input type="date" class="form-control" id="date-from">
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <label for="date-to" class="form-label">
+                    <i class="fas fa-calendar me-1"></i>עד תאריך
+                </label>
+                <input type="date" class="form-control" id="date-to">
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="calendar-only">
+                        <label class="form-check-label fw-semibold" for="calendar-only">
+                            <i class="fas fa-calendar-check me-1 text-success"></i>מסומנים ליומן בלבד
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-3">
+                <label class="form-label">&nbsp;</label>
+                <div>
+                    <button type="submit" class="btn-modern btn-primary-modern me-2">
+                        <i class="fas fa-search me-1"></i>חפש
+                    </button>
+                    <button type="button" class="btn-modern btn-error-modern" id="clear-search">
+                        <i class="fas fa-times me-1"></i>נקה
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Loading -->
+<div class="loading">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">טוען...</span>
+    </div>
+    <p class="mt-2">מחפש אנשי קשר...</p>
+</div>
+
+<!-- תוצאות -->
+<div id="results-container" style="display: none;">
+    <!-- כותרת תוצאות -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 id="results-title">תוצאות חיפוש</h4>
+        <div class="btn-group" role="group">
+            <button type="button" class="btn-modern btn-success-modern btn-sm" id="select-all-calendar">
+                <i class="fas fa-check-double me-1"></i>בחר הכל ליומן
+            </button>
+            <button type="button" class="btn-modern btn-error-modern btn-sm" id="deselect-all-calendar">
+                <i class="fas fa-times me-1"></i>בטל בחירת הכל
+            </button>
+        </div>
+    </div>
+
+    <!-- טבלת תוצאות -->
+    <div class="results-table">
+        <div class="table-responsive">
+            <table class="table table-modern mb-0">
+                <thead>
+                    <tr>
+                        <th>שם</th>
+                        <th>מספר טלפון</th>
+                        <th>שם חברה</th>
+                        <th>מדינה</th>
+                        <th>סוג</th>
+                        <th>שם ב-Google Contacts</th>
+                        <th>שם בוואטסאפ</th>
+                        <th>נוצר</th>
+                        <th>עודכן</th>
+                        <th>כלול ביומן</th>
+                        <th>סנכרון אחרון</th>
+                        <th>סנכרון</th>
+                    </tr>
+                </thead>
+                <tbody id="results-tbody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container">
+        <nav>
+            <ul class="pagination justify-content-center" id="pagination">
+            </ul>
+        </nav>
+        <p class="text-muted" id="results-info"></p>
+    </div>
+</div>
+
+<!-- הודעה אם אין תוצאות -->
+<div id="no-results" style="display: none;">
+    <div class="alert alert-info text-center">
+        <i class="fas fa-search fa-2x mb-3"></i>
+        <h5>לא נמצאו תוצאות</h5>
+        <p>נסה לשנות את קריטריוני החיפוש</p>
+    </div>
+</div>
+
+<!-- פופאפ הוספת אנשי קשר ל-Google -->
+<div class="modal fade" id="addToGoogleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-plus-circle me-2 text-success"></i>הוספת איש קשר ל-Google Contacts
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="add-to-google-form">
+                    <input type="hidden" id="add-contact-id">
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="add-contact-name" class="form-label">
+                                <i class="fas fa-user me-1"></i>שם מלא
+                            </label>
+                            <input type="text" class="form-control form-control-modern" id="add-contact-name" required>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="add-contact-phone" class="form-label">
+                                <i class="fas fa-phone me-1"></i>מספר טלפון
+                            </label>
+                            <input type="tel" class="form-control form-control-modern" id="add-contact-phone" required>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="add-contact-company" class="form-label">
+                                <i class="fas fa-building me-1"></i>שם חברה
+                            </label>
+                            <input type="text" class="form-control form-control-modern" id="add-contact-company">
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="add-contact-email" class="form-label">
+                                <i class="fas fa-envelope me-1"></i>אימייל (אופציונלי)
+                            </label>
+                            <input type="email" class="form-control form-control-modern" id="add-contact-email">
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>מידע:</strong> איש הקשר יוסף לחשבון Google שלך (eyal@barash.co.il) ויופיע ברשימת אנשי הקשר האישיים.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+                <button type="button" class="btn btn-success" id="confirm-add-to-google">
+                    <i class="fas fa-plus me-1"></i>הוסף ל-Google Contacts
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- פופאפ בחירת תקופה -->
+<div class="modal fade" id="syncModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-sync me-2"></i>בחירת תקופת סינכרון
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="sync-form">
+                    <input type="hidden" id="sync-item-id">
+                    <input type="hidden" id="sync-item-type">
+                    
+                    <div class="mb-3">
+                        <label for="sync-start-date" class="form-label">
+                            <i class="fas fa-calendar me-1"></i>מתאריך
+                        </label>
+                        <input type="date" class="form-control" id="sync-start-date" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sync-end-date" class="form-label">
+                            <i class="fas fa-calendar me-1"></i>עד תאריך
+                        </label>
+                        <input type="date" class="form-control" id="sync-end-date" required>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>מידע:</strong> הסינכרון יכלול הודעות טקסט בלבד ויוסיף אירועים ליומן Google.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ביטול</button>
+                <button type="button" class="btn-modern btn-primary-modern" id="confirm-sync">
+                    <i class="fas fa-sync me-1"></i>התחל סינכרון
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- פופאפ התקדמות סינכרון -->
+<div class="modal fade" id="progressModal" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-sync fa-spin me-2"></i>מסנכרן...
+                </h5>
+                <button type="button" class="btn btn-sm btn-outline-secondary" id="minimize-sync">
+                    <i class="fas fa-window-minimize"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="progress mb-3">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" style="width: 0%"></div>
+                </div>
+                <div id="progress-text">מתחיל סינכרון...</div>
+                <div id="progress-details" class="mt-2"></div>
+                
+                <!-- לוגים מפורטים -->
+                <div class="mt-3">
+                    <h6><i class="fas fa-list me-2"></i>לוג פעילות:</h6>
+                    <div id="sync-logs" class="bg-dark text-light p-2 rounded" style="height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                        <div class="text-success">[מתחיל] מערכת סינכרון הופעלה...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="close-sync-modal" style="display: none;">
+                    <i class="fas fa-times me-1"></i>סגור
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- חלון מוקטן לסינכרון -->
+<div id="minimized-sync" class="position-fixed bottom-0 end-0 p-3" style="display: none; z-index: 1050;">
+    <div class="card shadow" style="width: 300px;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">
+                <i class="fas fa-sync fa-spin me-2"></i>מסנכרן...
+            </h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="restore-sync">
+                <i class="fas fa-window-restore"></i>
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="progress mb-2" style="height: 6px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                     role="progressbar" style="width: 0%"></div>
+            </div>
+            <div id="minimized-progress-text" class="small">מתחיל סינכרון...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+let currentFilters = {};
+
+// חיפוש אנשי קשר
+function searchContacts(page = 1) {
+    currentPage = page;
+    
+    // איסוף פרמטרי חיפוש
+    const params = {
+        search: $('#search-term').val(),
+        phone: $('#phone-filter').val(),
+        date_from: $('#date-from').val(),
+        date_to: $('#date-to').val(),
+        calendar_only: $('#calendar-only').is(':checked'),
+        page: page,
+        per_page: 50
+    };
+    
+    // פילטרים נוספים
+    if ($('#israeli-only').is(':checked')) {
+        params.israeli_only = true;
+    }
+    if ($('#business-only').is(':checked')) {
+        params.business_only = true;
+    }
+    if ($('#personal-only').is(':checked')) {
+        params.personal_only = true;
+    }
+    
+    currentFilters = params;
+    
+    showLoading();
+    $('#results-container, #no-results').hide();
+    
+    $.get('/api/search/contacts', params)
+        .done(function(data) {
+            hideLoading();
+            
+            if (data.error) {
+                showAlert('שגיאה בחיפוש: ' + data.error, 'error');
+                return;
+            }
+            
+            if (data.contacts && data.contacts.length > 0) {
+                displayResults(data);
+            } else {
+                $('#no-results').show();
+            }
+        })
+        .fail(function() {
+            hideLoading();
+            showAlert('שגיאה בתקשורת עם השרת', 'error');
+        });
+}
+
+// הצגת תוצאות
+function displayResults(data) {
+    const tbody = $('#results-tbody');
+    tbody.empty();
+    
+    data.contacts.forEach(function(contact) {
+        const row = createContactRow(contact);
+        tbody.append(row);
+    });
+    
+    // עדכון מידע תוצאות
+    const start = (data.page - 1) * data.per_page + 1;
+    const end = Math.min(start + data.contacts.length - 1, data.total);
+    $('#results-info').text(`מציג ${start}-${end} מתוך ${data.total.toLocaleString()} תוצאות`);
+    $('#results-title').text(`נמצאו ${data.total.toLocaleString()} אנשי קשר`);
+    
+    // עדכון pagination
+    updatePagination(data);
+    
+    $('#results-container').show();
+}
+
+// יצירת שורה בטבלה
+function createContactRow(contact) {
+    const flags = [];
+    
+    if (contact.is_israeli) {
+        flags.push('<i class="fas fa-flag israeli-flag me-1" title="ישראלי"></i>');
+    }
+    if (contact.is_business) {
+        flags.push('<i class="fas fa-building business-icon me-1" title="עסק"></i>');
+    }
+    if (contact.is_group) {
+        flags.push('<i class="fas fa-users group-icon me-1" title="קבוצה"></i>');
+    }
+    
+    const calendarButton = contact.include_in_timebro ? 
+        `<button class="btn btn-calendar-yes btn-sm toggle-calendar" data-id="${contact.contact_id}" data-status="1">
+            <i class="fas fa-calendar-check me-1"></i>כלול
+        </button>` :
+        `<button class="btn btn-calendar-no btn-sm toggle-calendar" data-id="${contact.contact_id}" data-status="0">
+            <i class="fas fa-calendar-times me-1"></i>לא כלול
+        </button>`;
+    
+    return `
+        <tr>
+            <td>
+                <strong>${contact.push_name || contact.name || contact.phone_number || 'ללא שם'}</strong>
+                ${contact.name && contact.name !== contact.push_name ? 
+                    `<br><small class="text-muted">${contact.name}</small>` : ''}
+            </td>
+            <td>
+                <span dir="ltr">${contact.phone_number || 'ללא מספר'}</span>
+            </td>
+            <td>
+                <span class="company-name-editable" 
+                      data-id="${contact.contact_id}" 
+                      data-type="contact"
+                      style="cursor: pointer; border-bottom: 1px dashed #007bff; color: #007bff;"
+                      title="לחץ לעריכת שם החברה">
+                    ${contact.company_name || 'לחץ להגדרה'}
+                </span>
+            </td>
+            <td>
+                ${flags.join('')}
+                <span class="country-name" data-phone="${contact.phone_number}">
+                    ${getCountryFromPhone(contact.phone_number)}
+                </span>
+            </td>
+            <td>
+                <span class="badge bg-secondary">${contact.type || 'user'}</span>
+            </td>
+            <td>
+                <span class="google-contact-name-editable" 
+                      data-id="${contact.contact_id}" 
+                      data-type="google_contact"
+                      style="cursor: pointer; border-bottom: 1px dashed #28a745; color: #28a745;"
+                      title="לחץ לעריכת שם ב-Google Contacts">
+                    ${contact.google_contact_name || 'לחץ להגדרה'}
+                </span>
+            </td>
+            <td>
+                <span class="whatsapp-name-editable" 
+                      data-id="${contact.contact_id}" 
+                      data-type="whatsapp_name"
+                      style="cursor: pointer; border-bottom: 1px dashed #25d366; color: #25d366;"
+                      title="לחץ לעריכת שם בוואטסאפ">
+                    ${contact.whatsapp_personal_name || 'לחץ להגדרה'}
+                </span>
+            </td>
+            <td>
+                <small>${formatDate(contact.created_at)}</small>
+            </td>
+            <td>
+                <small>${formatDate(contact.updated_at)}</small>
+            </td>
+            <td>
+                ${calendarButton}
+            </td>
+            <td>
+                <div class="last-sync" id="last-sync-${contact.contact_id}">
+                    <span class="badge bg-secondary">
+                        <i class="fas fa-clock me-1"></i>
+                        לא סונכרן
+                    </span>
+                </div>
+            </td>
+            <td>
+                ${contact.google_contact_name ? 
+                    `<button class="btn-modern btn-primary-modern btn-sm sync-now" data-id="${contact.contact_id}" data-type="contact">
+                        <i class="fas fa-sync me-1"></i>סנכרן עכשיו
+                    </button>` :
+                    `<button class="btn-modern btn-success-modern btn-sm add-to-google" data-id="${contact.contact_id}" data-name="${contact.name}" data-phone="${contact.phone_number}" data-company="${contact.company_name || ''}">
+                        <i class="fas fa-plus me-1"></i>הוספה לאנשי הקשר
+                    </button>`
+                }
+                <div class="sync-status" id="sync-status-${contact.contact_id}" style="display: none;">
+                    <small class="text-muted">מסנכרן...</small>
+                </div>
+            </td>
+        </tr>
+    `;
+}
+
+// עדכון pagination
+function updatePagination(data) {
+    const pagination = $('#pagination');
+    pagination.empty();
+    
+    if (data.total_pages <= 1) return;
+    
+    // כפתור הקודם
+    if (data.page > 1) {
+        pagination.append(`
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="searchContacts(${data.page - 1})">הקודם</a>
+            </li>
+        `);
+    }
+    
+    // מספרי עמודים
+    const startPage = Math.max(1, data.page - 2);
+    const endPage = Math.min(data.total_pages, data.page + 2);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        const active = i === data.page ? 'active' : '';
+        pagination.append(`
+            <li class="page-item ${active}">
+                <a class="page-link" href="#" onclick="searchContacts(${i})">${i}</a>
+            </li>
+        `);
+    }
+    
+    // כפתור הבא
+    if (data.page < data.total_pages) {
+        pagination.append(`
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="searchContacts(${data.page + 1})">הבא</a>
+            </li>
+        `);
+    }
+}
+
+// עדכון סטטוס יומן
+function toggleCalendarStatus(contactId, currentStatus) {
+    const newStatus = currentStatus === 1 ? 0 : 1;
+    
+    $.ajax({
+        url: `/api/update/contact/${contactId}`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ include_in_timebro: newStatus === 1 }),
+        success: function(response) {
+            if (response.error) {
+                showAlert('שגיאה בעדכון: ' + response.error, 'error');
+                return;
+            }
+            
+            // עדכון הכפתור
+            const button = $(`.toggle-calendar[data-id="${contactId}"]`);
+            if (newStatus === 1) {
+                button.removeClass('btn-calendar-no').addClass('btn-calendar-yes')
+                      .attr('data-status', '1')
+                      .html('<i class="fas fa-calendar-check me-1"></i>כלול');
+            } else {
+                button.removeClass('btn-calendar-yes').addClass('btn-calendar-no')
+                      .attr('data-status', '0')
+                      .html('<i class="fas fa-calendar-times me-1"></i>לא כלול');
+            }
+            
+            updateStats();
+            showAlert('הסטטוס עודכן בהצלחה');
+        },
+        error: function() {
+            showAlert('שגיאה בתקשורת עם השרת', 'error');
+        }
+    });
+}
+
+// פורמט תאריך
+function formatDate(dateString) {
+    if (!dateString) return 'לא ידוע';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('he-IL') + ' ' + date.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'});
+}
+
+// זיהוי מדינה לפי מספר טלפון
+function getCountryFromPhone(phoneNumber) {
+    if (!phoneNumber) return 'לא ידוע';
+    
+    // הסרת תווים לא רלוונטיים
+    const cleanPhone = phoneNumber.replace(/[^\d+]/g, '');
+    
+    // מיפוי קידומות מדינות
+    const countryCodes = {
+        '972': 'ישראל 🇮🇱',
+        '1': 'ארצות הברית 🇺🇸',
+        '44': 'בריטניה 🇬🇧',
+        '49': 'גרמניה 🇩🇪',
+        '33': 'צרפת 🇫🇷',
+        '39': 'איטליה 🇮🇹',
+        '34': 'ספרד 🇪🇸',
+        '7': 'רוסיה 🇷🇺',
+        '86': 'סין 🇨🇳',
+        '81': 'יפן 🇯🇵',
+        '82': 'דרום קוריאה 🇰🇷',
+        '91': 'הודו 🇮🇳',
+        '55': 'ברזיל 🇧🇷',
+        '61': 'אוסטרליה 🇦🇺',
+        '27': 'דרום אפריקה 🇿🇦',
+        '20': 'מצרים 🇪🇬',
+        '966': 'ערב הסעודית 🇸🇦',
+        '971': 'איחוד האמירויות 🇦🇪',
+        '965': 'כווית 🇰🇼',
+        '974': 'קטר 🇶🇦',
+        '973': 'בחריין 🇧🇭',
+        '968': 'עומאן 🇴🇲'
+    };
+    
+    // בדיקה אם המספר מתחיל ב-+
+    if (cleanPhone.startsWith('+')) {
+        const phoneWithoutPlus = cleanPhone.substring(1);
+        
+        // בדיקה לפי קידומות ארוכות יותר קודם
+        for (const [code, country] of Object.entries(countryCodes)) {
+            if (phoneWithoutPlus.startsWith(code)) {
+                return country;
+            }
+        }
+    }
+    
+    // בדיקה ללא +
+    for (const [code, country] of Object.entries(countryCodes)) {
+        if (cleanPhone.startsWith(code)) {
+            return country;
+        }
+    }
+    
+    return 'לא ידוע';
+}
+
+// אירועים
+$(document).ready(function() {
+    // חיפוש בטופס
+    $('#search-form').on('submit', function(e) {
+        e.preventDefault();
+        searchContacts(1);
+    });
+    
+    // ניקוי חיפוש
+    $('#clear-search').on('click', function() {
+        $('#search-form')[0].reset();
+        $('#results-container, #no-results').hide();
+    });
+    
+    // עדכון סטטוס יומן
+    $(document).on('click', '.toggle-calendar', function() {
+        const contactId = $(this).data('id');
+        const currentStatus = parseInt($(this).data('status'));
+        toggleCalendarStatus(contactId, currentStatus);
+    });
+    
+    // בחירת הכל ליומן
+    $('#select-all-calendar').on('click', function() {
+        $('.toggle-calendar[data-status="0"]').each(function() {
+            const contactId = $(this).data('id');
+            toggleCalendarStatus(contactId, 0);
+        });
+    });
+    
+    // ביטול בחירת הכל
+    $('#deselect-all-calendar').on('click', function() {
+        $('.toggle-calendar[data-status="1"]').each(function() {
+            const contactId = $(this).data('id');
+            toggleCalendarStatus(contactId, 1);
+        });
+    });
+    
+    // חיפוש אוטומטי בהקלדה
+    $('#search-term, #phone-filter').on('input', function() {
+        clearTimeout(window.searchTimer);
+        window.searchTimer = setTimeout(function() {
+            if ($('#search-term').val().length >= 2 || $('#phone-filter').val().length >= 3) {
+                searchContacts(1);
+            }
+        }, 500);
+    });
+    
+    // עריכת שם חברה - inline editing
+    $(document).on('click', '.company-name-editable', function() {
+        editInlineField($(this), 'company', 'שם החברה');
+    });
+    
+    // עריכת שם Google Contacts - inline editing
+    $(document).on('click', '.google-contact-name-editable', function() {
+        editInlineField($(this), 'google_contact', 'שם ב-Google Contacts');
+    });
+    
+    // עריכת שם וואטסאפ - inline editing
+    $(document).on('click', '.whatsapp-name-editable', function() {
+        editInlineField($(this), 'whatsapp_name', 'שם בוואטסאפ');
+    });
+    
+    // הוספת אנשי קשר ל-Google
+    $(document).on('click', '.add-to-google', function() {
+        const contactId = $(this).data('id');
+        const contactName = $(this).data('name');
+        const contactPhone = $(this).data('phone');
+        const contactCompany = $(this).data('company');
+        
+        $('#add-contact-id').val(contactId);
+        $('#add-contact-name').val(contactName);
+        $('#add-contact-phone').val(contactPhone);
+        $('#add-contact-company').val(contactCompany);
+        $('#add-contact-email').val('');
+        
+        $('#addToGoogleModal').modal('show');
+    });
+    
+    // אישור הוספה ל-Google
+    $('#confirm-add-to-google').on('click', function() {
+        const contactId = $('#add-contact-id').val();
+        const contactName = $('#add-contact-name').val();
+        const contactPhone = $('#add-contact-phone').val();
+        const contactCompany = $('#add-contact-company').val();
+        const contactEmail = $('#add-contact-email').val();
+        
+        if (!contactName || !contactPhone) {
+            showAlert('נא למלא שם ומספר טלפון', 'error');
+            return;
+        }
+        
+        // הוספה ל-Google Contacts
+        $.ajax({
+            url: `/api/add-to-google/${contactId}`,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                name: contactName,
+                phone: contactPhone,
+                company: contactCompany,
+                email: contactEmail
+            }),
+            success: function(response) {
+                if (response.success) {
+                    showAlert('איש הקשר נוסף ל-Google Contacts בהצלחה!', 'success');
+                    $('#addToGoogleModal').modal('hide');
+                    // רענון הרשימה
+                    searchContacts(currentPage);
+                } else {
+                    showAlert('שגיאה בהוספה ל-Google: ' + response.error, 'error');
+                }
+            },
+            error: function() {
+                showAlert('שגיאה בתקשורת עם השרת', 'error');
+            }
+        });
+    });
+    
+    // פונקציה כללית לעריכת שדות inline
+    function editInlineField($span, fieldType, fieldLabel) {
+        const contactId = $span.data('id');
+        const currentValue = $span.text() === 'לחץ להגדרה' ? '' : $span.text();
+        
+        const $input = $('<input type="text" class="form-control form-control-sm" style="max-width: 200px;">');
+        $input.val(currentValue);
+        
+        $span.replaceWith($input);
+        $input.focus();
+        
+        // שמירה ב-Enter או blur
+        $input.on('blur keypress', function(e) {
+            if (e.type === 'blur' || e.which === 13) {
+                const newValue = $input.val().trim();
+                
+                // שמירה לשרת
+                $.ajax({
+                    url: `/api/update/contact/${contactId}/${fieldType}`,
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ [fieldType]: newValue }),
+                    success: function(response) {
+                        const color = fieldType === 'google_contact' ? '#28a745' : 
+                                     fieldType === 'whatsapp_name' ? '#25d366' : '#007bff';
+                        const $newSpan = $(`<span class="${fieldType}-name-editable" data-id="${contactId}" data-type="${fieldType}" style="cursor: pointer; border-bottom: 1px dashed ${color}; color: ${color};" title="לחץ לעריכת ${fieldLabel}">${newValue || 'לחץ להגדרה'}</span>`);
+                        $input.replaceWith($newSpan);
+                        showAlert(`${fieldLabel} עודכן בהצלחה`);
+                    },
+                    error: function() {
+                        const color = fieldType === 'google_contact' ? '#28a745' : 
+                                     fieldType === 'whatsapp_name' ? '#25d366' : '#007bff';
+                        const $newSpan = $(`<span class="${fieldType}-name-editable" data-id="${contactId}" data-type="${fieldType}" style="cursor: pointer; border-bottom: 1px dashed ${color}; color: ${color};" title="לחץ לעריכת ${fieldLabel}">${currentValue || 'לחץ להגדרה'}</span>`);
+                        $input.replaceWith($newSpan);
+                        showAlert(`שגיאה בעדכון ${fieldLabel}`, 'error');
+                    }
+                });
+                
+                e.preventDefault();
+            }
+        });
+    }
+    
+    // חיפוש ראשוני
+    searchContacts(1);
+    
+    // פונקציונליות סינכרון
+    let currentSyncId = null;
+    let syncCheckInterval = null;
+    let isMinimized = false;
+    
+    // שמירת טווח תאריכים ב-localStorage
+    function saveDateRange(startDate, endDate) {
+        localStorage.setItem('lastSyncRange', JSON.stringify({
+            startDate: startDate,
+            endDate: endDate
+        }));
+    }
+    
+    // טעינת טווח תאריכים שמור
+    function loadDateRange() {
+        const saved = localStorage.getItem('lastSyncRange');
+        if (saved) {
+            try {
+                const range = JSON.parse(saved);
+                $('#sync-start-date').val(range.startDate);
+                $('#sync-end-date').val(range.endDate);
+            } catch (e) {
+                console.log('שגיאה בטעינת טווח שמור:', e);
+            }
+        } else {
+            // ברירת מחדל: 1 לחודש הקודם עד היום
+            const today = new Date();
+            const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            $('#sync-start-date').val(lastMonth.toISOString().split('T')[0]);
+            $('#sync-end-date').val(today.toISOString().split('T')[0]);
+        }
+    }
+    
+    // לחיצה על כפתור סינכרון
+    $(document).on('click', '.sync-now', function() {
+        const itemId = $(this).data('id');
+        const itemType = $(this).data('type');
+        
+        $('#sync-item-id').val(itemId);
+        $('#sync-item-type').val(itemType);
+        
+        // טעינת טווח שמור
+        loadDateRange();
+        
+        // הצגת הפופאפ
+        $('#syncModal').modal('show');
+    });
+    
+    // אישור סינכרון
+    $('#confirm-sync').on('click', function() {
+        const itemId = $('#sync-item-id').val();
+        const itemType = $('#sync-item-type').val();
+        const startDate = $('#sync-start-date').val();
+        const endDate = $('#sync-end-date').val();
+        
+        if (!startDate || !endDate) {
+            showAlert('נא לבחור תאריכי התחלה וסיום', 'error');
+            return;
+        }
+        
+        // שמירת הטווח
+        saveDateRange(startDate, endDate);
+        
+        // סגירת פופאפ בחירה
+        $('#syncModal').modal('hide');
+        
+        // הצגת פופאפ התקדמות
+        $('#progressModal').modal('show');
+        
+        // התחלת סינכרון
+        startSync(itemId, itemType, startDate, endDate);
+    });
+    
+    // התחלת סינכרון
+    function startSync(itemId, itemType, startDate, endDate) {
+        const url = itemType === 'contact' ? 
+            `/api/sync/contact/${itemId}` : 
+            `/api/sync/group/${itemId}`;
+        
+        $.ajax({
+            url: url,
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                start_date: startDate,
+                end_date: endDate
+            }),
+            success: function(response) {
+                if (response.success) {
+                    currentSyncId = response.sync_id;
+                    $('#progress-text').text('סינכרון הותחל בהצלחה...');
+                    startProgressCheck();
+                } else {
+                    showAlert('שגיאה בהתחלת סינכרון: ' + response.error, 'error');
+                    $('#progressModal').modal('hide');
+                }
+            },
+            error: function() {
+                showAlert('שגיאה בתקשורת עם השרת', 'error');
+                $('#progressModal').modal('hide');
+            }
+        });
+    }
+    
+    // בדיקת התקדמות סינכרון
+    function startProgressCheck() {
+        if (syncCheckInterval) {
+            clearInterval(syncCheckInterval);
+        }
+        
+        syncCheckInterval = setInterval(function() {
+            if (!currentSyncId) return;
+            
+            $.get(`/api/sync/status/${currentSyncId}`)
+                .done(function(status) {
+                    if (status.status === 'completed') {
+                        clearInterval(syncCheckInterval);
+                        handleSyncComplete(status.result);
+                    } else if (status.status === 'error') {
+                        clearInterval(syncCheckInterval);
+                        handleSyncError(status.error);
+                    } else if (status.status === 'running') {
+                        updateProgress(status);
+                    }
+                })
+                .fail(function() {
+                    clearInterval(syncCheckInterval);
+                    handleSyncError('שגיאה בבדיקת סטטוס');
+                });
+        }, 2000); // בדיקה כל 2 שניות
+    }
+    
+    // עדכון התקדמות
+    function updateProgress(status) {
+        $('#progress-text').text('מסנכרן הודעות...');
+        $('#progress-details').html(`
+            <small class="text-muted">
+                <i class="fas fa-clock me-1"></i>
+                התחיל ב-${new Date(status.started_at).toLocaleString('he-IL')}
+            </small>
+        `);
+    }
+    
+    // השלמת סינכרון
+    function handleSyncComplete(result) {
+        $('#progressModal').modal('hide');
+        
+        if (result.success) {
+            const message = `סינכרון הושלם בהצלחה!<br>
+                           📱 הודעות שנמצאו: ${result.messages_found}<br>
+                           💾 הודעות שנשמרו: ${result.messages_saved}<br>
+                           📅 אירועים שנוצרו: ${result.events_created}`;
+            showAlert(message, 'success');
+            
+            // עדכון סטטוס בממשק
+            updateSyncStatus(result.contact_id || result.group_id, result);
+            
+            // עדכון סטטיסטיקות
+            updateStats();
+            
+            // רענון רשימה
+            searchContacts(currentPage);
+        } else {
+            showAlert('סינכרון נכשל: ' + result.error, 'error');
+        }
+        
+        currentSyncId = null;
+    }
+    
+    // שגיאה בסינכרון
+    function handleSyncError(error) {
+        $('#progressModal').modal('hide');
+        showAlert('שגיאה בסינכרון: ' + error, 'error');
+        currentSyncId = null;
+    }
+    
+    // עדכון סטטוס סינכרון בממשק
+    function updateSyncStatus(itemId, result) {
+        const statusDiv = $(`#sync-status-${itemId}`);
+        const lastSyncDiv = $(`#last-sync-${itemId}`);
+        
+        if (statusDiv.length) {
+            statusDiv.html(`
+                <small class="text-success">
+                    <i class="fas fa-check-circle me-1"></i>
+                    הושלם: ${result.messages_saved} הודעות, ${result.events_created} אירועים
+                </small>
+            `).show();
+        }
+        
+        // עדכון עמודת "סנכרון אחרון"
+        if (lastSyncDiv.length) {
+            const now = new Date().toLocaleString('he-IL');
+            lastSyncDiv.html(`
+                <span class="badge bg-success">
+                    <i class="fas fa-check me-1"></i>
+                    ${now}
+                </span>
+                <br>
+                <small class="text-muted">
+                    ${result.messages_saved} הודעות, ${result.events_created} אירועים
+                </small>
+            `);
+        }
+    }
+    
+    // טעינת סטטוס סינכרון קיים
+    function loadSyncStatus(itemId) {
+        $.get(`/api/sync/status/item/${itemId}`)
+            .done(function(status) {
+                const lastSyncDiv = $(`#last-sync-${itemId}`);
+                const statusDiv = $(`#sync-status-${itemId}`);
+                
+                if (status.last_sync) {
+                    const lastSync = new Date(status.last_sync).toLocaleString('he-IL');
+                    const icon = status.success ? 'check-circle text-success' : 'times-circle text-danger';
+                    const badgeClass = status.success ? 'bg-success' : 'bg-danger';
+                    
+                    // עדכון עמודת "סנכרון אחרון"
+                    if (lastSyncDiv.length) {
+                        lastSyncDiv.html(`
+                            <span class="badge ${badgeClass}">
+                                <i class="fas fa-${status.success ? 'check' : 'times'} me-1"></i>
+                                ${lastSync}
+                            </span>
+                            <br>
+                            <small class="text-muted">
+                                ${status.messages_count} הודעות, ${status.events_count} אירועים
+                            </small>
+                        `);
+                    }
+                    
+                    // עדכון סטטוס סינכרון (אם קיים)
+                    if (statusDiv.length) {
+                        statusDiv.html(`
+                            <small class="${status.success ? 'text-success' : 'text-danger'}">
+                                <i class="fas fa-${icon} me-1"></i>
+                                הושלם: ${status.messages_count} הודעות, ${status.events_count} אירועים
+                            </small>
+                        `).show();
+                    }
+                } else {
+                    // אם לא סונכרן מעולם
+                    if (lastSyncDiv.length) {
+                        lastSyncDiv.html(`
+                            <span class="badge bg-secondary">
+                                <i class="fas fa-clock me-1"></i>
+                                לא סונכרן
+                            </span>
+                        `);
+                    }
+                }
+            })
+            .fail(function() {
+                const lastSyncDiv = $(`#last-sync-${itemId}`);
+                if (lastSyncDiv.length) {
+                    lastSyncDiv.html(`
+                        <span class="badge bg-warning">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            שגיאה
+                        </span>
+                    `);
+                }
+            });
+    }
+    
+    // טעינת סטטוס סינכרון לכל הפריטים
+    function loadAllSyncStatus() {
+        $('.sync-now').each(function() {
+            const itemId = $(this).data('id');
+            loadSyncStatus(itemId);
+        });
+    }
+    
+    // טעינת סטטוס סינכרון אחרי חיפוש
+    setTimeout(loadAllSyncStatus, 1000);
+    
+    // פונקציונליות צמצום חלון סינכרון
+    $('#minimize-sync').on('click', function() {
+        $('#progressModal').modal('hide');
+        $('#minimized-sync').show();
+        isMinimized = true;
+    });
+    
+    $('#restore-sync').on('click', function() {
+        $('#minimized-sync').hide();
+        $('#progressModal').modal('show');
+        isMinimized = false;
+    });
+    
+    // פונקציה להוספת לוג
+    function addSyncLog(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString('he-IL');
+        const logClass = type === 'error' ? 'text-danger' : 
+                        type === 'success' ? 'text-success' : 
+                        type === 'warning' ? 'text-warning' : 'text-light';
+        
+        const logEntry = `<div class="${logClass}">[${timestamp}] ${message}</div>`;
+        
+        // הוספה לחלון הראשי
+        $('#sync-logs').append(logEntry);
+        $('#sync-logs').scrollTop($('#sync-logs')[0].scrollHeight);
+        
+        // הוספה לחלון המוקטן
+        if (isMinimized) {
+            $('#minimized-progress-text').text(message);
+        }
+    }
+    
+    // עדכון פונקציות הסינכרון עם לוגים
+    const originalStartSync = startSync;
+    startSync = function(itemId, itemType, startDate, endDate) {
+        addSyncLog(`מתחיל סינכרון ${itemType}: ${itemId}`, 'info');
+        addSyncLog(`תקופה: ${startDate} - ${endDate}`, 'info');
+        return originalStartSync(itemId, itemType, startDate, endDate);
+    };
+    
+    const originalUpdateProgress = updateProgress;
+    updateProgress = function(status) {
+        addSyncLog('מסנכרן הודעות...', 'info');
+        return originalUpdateProgress(status);
+    };
+    
+    const originalHandleSyncComplete = handleSyncComplete;
+    handleSyncComplete = function(result) {
+        if (result.success) {
+            addSyncLog(`✅ סינכרון הושלם בהצלחה!`, 'success');
+            addSyncLog(`📱 הודעות שנמצאו: ${result.messages_found}`, 'success');
+            addSyncLog(`💾 הודעות שנשמרו: ${result.messages_saved}`, 'success');
+            addSyncLog(`📅 אירועים שנוצרו: ${result.events_created}`, 'success');
+        } else {
+            addSyncLog(`❌ סינכרון נכשל: ${result.error}`, 'error');
+        }
+        return originalHandleSyncComplete(result);
+    };
+    
+    const originalHandleSyncError = handleSyncError;
+    handleSyncError = function(error) {
+        addSyncLog(`❌ שגיאה בסינכרון: ${error}`, 'error');
+        return originalHandleSyncError(error);
+    };
+});
+</script>
+{% endblock %}
+
+
+

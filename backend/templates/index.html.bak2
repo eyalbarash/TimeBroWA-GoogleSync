@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}דף הבית - TimeBro Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+            <!-- Header Section -->
+            <div class="text-center mb-5 animate-fade-in">
+                <h1 class="text-gradient">
+                    <i class="fas fa-calendar-plus me-3"></i>
+                    TimeBro Manager
+                </h1>
+                <p class="text-muted text-lg">נהל את אנשי הקשר והקבוצות שלך לצורך הכנסה ליומן TimeBro</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <a href="/contacts" class="text-decoration-none">
+                <div class="card card-glass h-100 animate-slide-in-right" style="animation-delay: 0.1s;">
+                    <div class="card-header">
+                        <div class="flex justify-between items-center">
+                            <h3 class="mb-0">
+                                <i class="fas fa-users me-2 text-primary"></i>אנשי קשר
+                            </h3>
+                            <i class="fas fa-arrow-left fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 border-end border-primary">
+                                <h2 id="total-contacts" class="text-primary mb-2">{{ stats.total_contacts|default(0) }}</h2>
+                                <p class="text-muted mb-0">סה"כ אנשי קשר</p>
+                            </div>
+                            <div class="col-6">
+                                <h2 id="contacts-in-calendar" class="text-success mb-2">{{ stats.contacts_in_calendar|default(0) }}</h2>
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-calendar-check me-1"></i>מסומנים ליומן
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        
+        <div class="col-md-6">
+            <a href="/groups" class="text-decoration-none">
+                <div class="card card-glass h-100 animate-slide-in-right" style="animation-delay: 0.2s;">
+                    <div class="card-header">
+                        <div class="flex justify-between items-center">
+                            <h3 class="mb-0">
+                                <i class="fas fa-users-cog me-2 text-success"></i>קבוצות
+                            </h3>
+                            <i class="fas fa-arrow-left fa-2x text-success"></i>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6 border-end border-success">
+                                <h2 id="total-groups" class="text-success mb-2">{{ stats.total_groups|default(0) }}</h2>
+                                <p class="text-muted mb-0">סה"כ קבוצות</p>
+                            </div>
+                            <div class="col-6">
+                                <h2 id="groups-in-calendar" class="text-primary mb-2">{{ stats.groups_in_calendar|default(0) }}</h2>
+                                <p class="text-muted mb-0">
+                                    <i class="fas fa-calendar-check me-1"></i>מסומנות ליומן
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+
+
+<!-- סטטיסטיקות סינכרון -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card card-glass">
+            <div class="card-header">
+                <h3>
+                    <i class="fas fa-chart-line me-2 text-info"></i>סטטיסטיקות סינכרון
+                </h3>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <h2 id="total-calendar-events" class="text-primary mb-2">{{ stats.total_calendar_events|default(0) }}</h2>
+                        <p class="text-muted mb-0">סה״כ אירועים ביומן</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h2 id="recent-calendar-events" class="text-success mb-2">{{ stats.recent_calendar_events|default(0) }}</h2>
+                        <p class="text-muted mb-0">אירועים מ-30 יום אחרונים</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h2 id="august-2025-events" class="text-warning mb-2">{{ stats.august_2025_events|default(0) }}</h2>
+                        <p class="text-muted mb-0">אירועים מאוגוסט 2025</p>
+                    </div>
+                    <div class="col-md-3">
+                        <h2 id="last-sync-messages" class="text-info mb-2">{{ stats.last_sync_messages|default(0) }}</h2>
+                        <p class="text-muted mb-0">הודעות בסינכרון אחרון</p>
+                    </div>
+                </div>
+                {% if stats.last_sync_date %}
+                <div class="row mt-3">
+                    <div class="col-12 text-center">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>
+                            סינכרון אחרון: {{ stats.last_sync_date }}
+                            {% if stats.last_sync_events > 0 %}
+                            | נוצרו {{ stats.last_sync_events }} אירועים
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- מידע על Rate Limiting -->
+                <div class="row mt-2">
+                    <div class="col-12 text-center">
+                        <small class="text-info">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            <strong>Rate Limiting מופעל:</strong> 1.2 שניות בין בקשות | 2 שניות בין סינכרונים
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- כפתור סינכרון כללי -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3>
+                    <i class="fas fa-sync me-2 text-warning"></i>סינכרון כללי
+                </h3>
+                <p class="text-muted">סנכרן את כל האנשים והקבוצות המסומנים ליומן</p>
+                <button class="btn btn-primary btn-lg" id="sync-all-btn">
+                    <i class="fas fa-sync me-2" id="sync-icon"></i>
+                    <span id="sync-text">סנכרן הכל עכשיו</span>
+                </button>
+                <div id="sync-all-status" class="mt-3" style="display: none;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-sync fa-spin me-2"></i>
+                        <span id="sync-all-text">מתחיל סינכרון...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- מידע על המערכת -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card card-glass">
+            <div class="card-header">
+                <h4><i class="fas fa-info-circle me-2 text-primary"></i>מידע על המערכת</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-database me-2"></i>מקורות נתונים</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Green API - אנשי קשר</li>
+                            <li><i class="fas fa-check-circle text-success me-2"></i>Evolution API - קבוצות</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-search me-2"></i>אפשרויות חיפוש</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-user me-2"></i>חיפוש לפי שם</li>
+                            <li><i class="fas fa-phone me-2"></i>חיפוש לפי מספר טלפון</li>
+                            <li><i class="fas fa-calendar me-2"></i>סינון לפי תאריכים</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6><i class="fas fa-filter me-2"></i>פילטרים זמינים</h6>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-flag me-2"></i>ישראליים בלבד</li>
+                            <li><i class="fas fa-building me-2"></i>עסקים בלבד</li>
+                            <li><i class="fas fa-calendar-check me-2"></i>מסומנים ליומן</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    updateStats();
+    
+    // פונקציונליות סינכרון כללי
+    let currentSyncId = null;
+    let syncCheckInterval = null;
+    
+    // שמירת טווח תאריכים ב-localStorage
+    function saveDateRange(startDate, endDate) {
+        localStorage.setItem('lastSyncRange', JSON.stringify({
+            startDate: startDate,
+            endDate: endDate
+        }));
+    }
+    
+    // טעינת טווח תאריכים שמור
+    function loadDateRange() {
+        const saved = localStorage.getItem('lastSyncRange');
+        if (saved) {
+            try {
+                const range = JSON.parse(saved);
+                return {
+                    startDate: range.startDate,
+                    endDate: range.endDate
+                };
+            } catch (e) {
+                console.log('שגיאה בטעינת טווח שמור:', e);
+            }
+        }
+        
+        // ברירת מחדל: 1 לחודש הקודם עד היום
+        const today = new Date();
+        const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+        return {
+            startDate: lastMonth.toISOString().split('T')[0],
+            endDate: today.toISOString().split('T')[0]
+        };
+    }
+    
+    // לחיצה על כפתור סינכרון כללי
+    // התחלת סינכרון כללי
+    function startSyncAll(startDate, endDate) {
+        $('#sync-all-btn').prop('disabled', true);
+        $('#sync-all-status').show();
+        $('#sync-all-text').text('מתחיל סינכרון כללי...');
+        
+        $.ajax({
+            url: '/api/sync/all',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                start_date: startDate,
+                end_date: endDate
+            }),
+            success: function(response) {
+                if (response.success) {
+                    currentSyncId = response.sync_id;
+                    $('#sync-all-text').text('סינכרון הותחל בהצלחה...');
+                    startProgressCheck();
+                } else {
+                    showAlert('שגיאה בהתחלת סינכרון: ' + response.error, 'error');
+                    resetSyncButton();
+                }
+            },
+            error: function() {
+                showAlert('שגיאה בתקשורת עם השרת', 'error');
+                resetSyncButton();
+            }
+        });
+    }
+    
+    // בדיקת התקדמות סינכרון
+    function startProgressCheck() {
+        if (syncCheckInterval) {
+            clearInterval(syncCheckInterval);
+        }
+        
+        syncCheckInterval = setInterval(function() {
+            if (!currentSyncId) return;
+            
+            $.get(`/api/sync/status/${currentSyncId}`)
+                .done(function(status) {
+                    if (status.status === 'completed') {
+                        clearInterval(syncCheckInterval);
+                        handleSyncComplete(status.result);
+                    } else if (status.status === 'error') {
+                        clearInterval(syncCheckInterval);
+                        handleSyncError(status.error);
+                    } else if (status.status === 'running') {
+                        updateProgress(status);
+                    }
+                })
+                .fail(function() {
+                    clearInterval(syncCheckInterval);
+                    handleSyncError('שגיאה בבדיקת סטטוס');
+                });
+        }, 3000); // בדיקה כל 3 שניות
+    }
+    
+    // עדכון התקדמות
+    function updateProgress(status) {
+        $('#sync-all-text').text('מסנכרן הודעות...');
+    }
+    
+    // השלמת סינכרון
+    function handleSyncComplete(result) {
+        if (result.success) {
+            const message = `סינכרון כללי הושלם בהצלחה!<br>
+                           👥 אנשי קשר: ${result.total_contacts}<br>
+                           👥 קבוצות: ${result.total_groups}<br>
+                           📱 סה"כ הודעות: ${result.total_messages}<br>
+                           📅 סה"כ אירועים: ${result.total_events}`;
+            showAlert(message, 'success');
+            
+            // עדכון סטטיסטיקות
+            updateStats();
+        } else {
+            showAlert('סינכרון כללי נכשל: ' + result.error, 'error');
+        }
+        
+        resetSyncButton();
+        currentSyncId = null;
+    }
+    
+    // שגיאה בסינכרון
+    function handleSyncError(error) {
+        showAlert('שגיאה בסינכרון כללי: ' + error, 'error');
+        resetSyncButton();
+        currentSyncId = null;
+    }
+    
+    // איפוס כפתור סינכרון
+    function resetSyncButton() {
+        $('#sync-all-btn').prop('disabled', false);
+        $('#sync-all-status').hide();
+    }
+});
+</script>
+{% endblock %}
+
+
+
