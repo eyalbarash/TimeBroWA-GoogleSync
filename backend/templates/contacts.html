@@ -794,14 +794,17 @@ $(document).ready(function() {
                     contentType: 'application/json',
                     data: JSON.stringify({ [fieldType]: newValue }),
                     success: function(response) {
-                        const color = fieldType === 'google_contact' ? '#28a745' : 
+                        const color = fieldType === 'google_contact' ? '#28a745' :
                                      fieldType === 'whatsapp_name' ? '#25d366' : '#007bff';
-                        const $newSpan = $(`<span class="${fieldType}-name-editable" data-id="${contactId}" data-type="${fieldType}" style="cursor: pointer; border-bottom: 1px dashed ${color}; color: ${color};" title="לחץ לעריכת ${fieldLabel}">${newValue || 'לחץ להגדרה'}</span>`);
+                        // השתמש בערך שחזר מהשרת
+                        const savedValue = response.google_contact_name || response.whatsapp_name || newValue;
+                        const displayValue = savedValue || 'לחץ להגדרה';
+                        const $newSpan = $(`<span class="${fieldType}-name-editable" data-id="${contactId}" data-type="${fieldType}" style="cursor: pointer; border-bottom: 1px dashed ${color}; color: ${color};" title="לחץ לעריכת ${fieldLabel}">${displayValue}</span>`);
                         $input.replaceWith($newSpan);
                         showAlert(`${fieldLabel} עודכן בהצלחה`);
                     },
                     error: function() {
-                        const color = fieldType === 'google_contact' ? '#28a745' : 
+                        const color = fieldType === 'google_contact' ? '#28a745' :
                                      fieldType === 'whatsapp_name' ? '#25d366' : '#007bff';
                         const $newSpan = $(`<span class="${fieldType}-name-editable" data-id="${contactId}" data-type="${fieldType}" style="cursor: pointer; border-bottom: 1px dashed ${color}; color: ${color};" title="לחץ לעריכת ${fieldLabel}">${currentValue || 'לחץ להגדרה'}</span>`);
                         $input.replaceWith($newSpan);

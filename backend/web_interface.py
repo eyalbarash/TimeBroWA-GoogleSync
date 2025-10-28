@@ -390,10 +390,10 @@ class DatabaseManager:
             conn.commit()
             conn.close()
             
-            return {'success': True}
+            return {'success': True, 'google_contact_name': google_contact_name}
         except Exception as e:
             return {'error': str(e)}
-    
+
     def update_contact_whatsapp_name(self, contact_id, whatsapp_name):
         """עדכון שם וואטסאפ של איש קשר"""
         try:
@@ -415,11 +415,11 @@ class DatabaseManager:
             
             conn.commit()
             conn.close()
-            
-            return {'success': True}
+
+            return {'success': True, 'whatsapp_name': whatsapp_name}
         except Exception as e:
             return {'error': str(e)}
-    
+
     def add_contact_to_google(self, contact_id, name, phone, company, email):
         """הוספת איש קשר ל-Google Contacts"""
         try:
