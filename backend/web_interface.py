@@ -12,10 +12,18 @@ import time
 import logging
 from datetime import datetime
 import os
+import re
 from sync_manager import SyncManager
 from credential_manager import GreenAPICredentials
 from green_api_client import GreenAPITester
 from auth_manager import init_auth_manager, require_auth, get_current_user
+
+# Register REGEXP function for SQLite
+def regexp(pattern, string):
+    """Custom REGEXP function for SQLite"""
+    if string is None:
+        return False
+    return re.search(pattern, string) is not None
 
 # Configure logging
 logging.basicConfig(
@@ -42,6 +50,8 @@ class DatabaseManager:
         """חיפוש אנשי קשר עם פילטרים"""
         try:
             conn = sqlite3.connect(self.contacts_db)
+            # Register custom REGEXP function
+            conn.create_function("REGEXP", 2, regexp)
             cursor = conn.cursor()
             
             # בניית שאילתה
